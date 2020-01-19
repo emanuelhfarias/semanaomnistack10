@@ -1,6 +1,7 @@
 const axios = require('axios');
 const Dev = require('../models/Dev');
 const parseStringAsArray = require('../utils/parseStringAsArray');
+const { findConnections, sendMessage } = require('../websocket');
 
 /*
  * Um controller geralmente possui 5 funções:
@@ -23,6 +24,14 @@ module.exports = {
             const techsArray = parseStringAsArray(techs);
             const location = {type: 'Point', coordinates: [latitude, longitude]}
             dev = await Dev.create({github_username, name, avatar_url, bio, techs: techsArray, location});
+
+            // filtrar as conexões que estão no máximo 10km de dist e que o novo DEV tenha uma das Techs listadas
+            const sendSocketMessageTo = findConnections(
+              {latitude, longitude},
+              techsArray
+            );
+            console.log(`> sendSocketMessageTo: ${sendSocketMessageTo.length}`)
+            sendMessage(sendSocketMessageTo, 'new-dev', dev);
         }
         return response.json(dev);
     },
